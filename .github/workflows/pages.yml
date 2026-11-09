@@ -1,0 +1,61 @@
+name: 构建并发布产品官网
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: github-pages
+  cancel-in-progress: false
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: 确认独立官网仓库
+        run: |
+          node -e "const p=require('./package.json');if(p.name!=='report-tool-website')process.exit(1)"
+          test ! -d report-server
+          test ! -d report-core
+          test ! -d report-web
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/configure-pages@v5
+        id: pages
+      - run: npm ci
+      - name: 构建并扫描静态产物
+        run: npm run build
+        env:
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+          SITE_URL: ${{ steps.pages.outputs.base_url }}
+      - name: 安装无头浏览器
+        run: npx playwright install --with-deps chromium
+      - name: 验证网站及部署路径
+        run: npm test
+        env:
+          BASE_PATH: ${{ steps.pages.outputs.base_path }}/
+      - name: 失败证据
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: website-test-evidence
+          path: test-results/
+          retention-days: 7
+      - uses: actions/upload-pages-artifact@v4
+        with:
+          path: dist
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/deploy-pages@v4
+        id: deployment

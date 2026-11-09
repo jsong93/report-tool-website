@@ -1,0 +1,27 @@
+{
+  "name": "report-tool-website",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "engines": {
+    "node": ">=24.12.0 <25"
+  },
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "vue-tsc --noEmit && vite build && node scripts/audit-dist.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "test": "playwright test",
+    "check": "vue-tsc --noEmit",
+    "package:public": "node scripts/package-public.mjs"
+  },
+  "dependencies": {
+    "vue": "3.5.42"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.64.0",
+    "@vitejs/plugin-vue": "6.0.8",
+    "typescript": "5.9.3",
+    "vite": "8.2.2",
+    "vue-tsc": "3.3.11"
+  }
+}
